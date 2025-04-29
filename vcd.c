@@ -18,8 +18,8 @@
 #define TXT(A) VAL(A)
 
 int getSize(unsigned* const rows, unsigned* const cols);
-int keyEvents();
-int getc_noecho();
+int keyEvents(void);
+int getc_noecho(void);
 
 typedef struct
 {
@@ -139,7 +139,7 @@ void parseInst(Parameters* params, Parser* p)
 	if (!strcmp("var", token))
 	{
 		char id_str[4];
-		Channel chan = {};
+		Channel chan = {0};
 		fscanf(params->fin, " reg %d %3[^ ] %"TXT(MAX_NAME)"[^$]", &(chan.size), id_str, chan.name);
 		fscanf(params->fin, " wire %d %3[^ ] %"TXT(MAX_NAME)"[^$]", &(chan.size), id_str, chan.name);
 		int id = char2id(id_str);
@@ -299,7 +299,7 @@ void showVertical(Parameters* params, Parser* p)
 		fprintf(params->fout, " / %s", p->scale);
 	if (params->zoom)
 		fprintf(params->fout, " / zoom: %d \n", params->zoom);
-	fprintf(params->fout, "help: q quit / ←↓↑→ scroll / ctrl+←→ zoom  / r reload");
+	fprintf(params->fout, "help: q quit / ←↓↑→ scroll / +- zoom  / r reload");
 	fprintf(params->fout, "\n");
 
 	char scalestr[32] = {'\0'};
@@ -317,15 +317,15 @@ void showVertical(Parameters* params, Parser* p)
 			unsigned timescalestep = params->timescalestep;
 			if (timescalestep != 0)
 			{
-				fprintf(params->fout, "┌── %s%*.*stime: ", p->ch[chan].scope ? p->scopes[p->ch[chan].scope] : "", \
-						params->colsize - strlen(p->ch[chan].scope ? p->scopes[p->ch[chan].scope] : "") - 2, 0);
+				fprintf(params->fout, "┌── %s%*stime: ", p->ch[chan].scope ? p->scopes[p->ch[chan].scope] : "", \
+						(int) (params->colsize - strlen(p->ch[chan].scope ? p->scopes[p->ch[chan].scope] : "") - 2), "");
 				unsigned tmp = 0;
 				for (unsigned smpl = (params->beginsmpl > 0 ? params->beginsmpl : 0); \
 						smpl < (tmp = (params->endsmpl < p->nb && params->endsmpl != 0 ? params->endsmpl : p->nb) - (params->tui != 0 ? timescalestep * (params->zoom > 0 ? params->zoom : 1) : 0), tmp > 0 ? tmp : 0); \
 						smpl += timescalestep * (params->zoom > 0 ? params->zoom : 1))
 				{
 					unsigned scalenum = smpl * atoi(p->scale);
-					fprintf(params->fout, "▏%d%s%*.*s", scalenum, scalestr, timescalestep * params->width - 1 - numDischarges(scalenum) - strlen(scalestr), 0);
+					fprintf(params->fout, "▏%d%s%*s", scalenum, scalestr, (int) (timescalestep * params->width - 1 - numDischarges(scalenum) - strlen(scalestr)), "");
 				}
 				fprintf(params->fout, "\n│\n");
 			}
@@ -463,9 +463,9 @@ int main(int argc, char** argv)
 			keyCode = starttui ? keyEvents() : 0;
 			if (keyCode == 'q')
 				return 0;
-			if (keyCode == 1054)
+			if (keyCode == '-') // was: 1054
 				params.zoom = (params.zoom) + 1;
-			if (keyCode == 1053)
+			if (keyCode == '+') // was: 1053
 				params.zoom = (params.zoom > 1 ? params.zoom - 1 : 1);
 			if (keyCode == 1001)
 				params.beginch = (params.beginch > 1 ? params.beginch - 1 : 0);
@@ -491,7 +491,7 @@ int main(int argc, char** argv)
 }
 
 /////////////////////////////////////////TUI
-int getc_noecho()
+int getc_noecho(void)
 {
 	struct termios oldt, newt;
 	int ch;
@@ -509,7 +509,7 @@ int getc_noecho()
 	return ch;
 }
 
-int keyEvents()
+int keyEvents(void)
 {
 	int ch;
 	ch = getc_noecho();

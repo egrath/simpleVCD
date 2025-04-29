@@ -1,3 +1,2 @@
-vcd
-.orig
-.out
+*.o
+*.exe
